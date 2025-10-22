@@ -1,46 +1,56 @@
-const chat = document.getElementById("chat");
-const input = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
+const chatWindow = document.getElementById("chat-window");
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
 
-// REPLACE THIS URL with your Render backend URL once you deploy the server
-const SERVER_URL = "https://your-ai-server.onrender.com/api/chat";
-
-function addMessage(text, sender) {
-  const div = document.createElement("div");
-  div.className = `message ${sender}`;
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+// Add a message to chat
+function addMessage(text, className) {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add("message", className);
+  msgDiv.textContent = text;
+  chatWindow.appendChild(msgDiv);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
+// Typing animation for AI
+function typeMessage(text, callback) {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add("message", "ai-msg");
+  chatWindow.appendChild(msgDiv);
+  let i = 0;
+  const interval = setInterval(() => {
+    msgDiv.textContent += text.charAt(i);
+    i++;
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    if (i === text.length) {
+      clearInterval(interval);
+      if (callback) callback();
+    }
+  }, 20);
+}
+
+// Send message to backend
 async function sendMessage() {
-  const text = input.value.trim();
-  if (!text) return;
+  const message = userInput.value.trim();
+  if (!message) return;
 
-  addMessage(text, "user");
-  input.value = "";
-
-  addMessage("Typing...", "bot");
+  addMessage(message, "user-msg");
+  userInput.value = "";
 
   try {
-    const res = await fetch(SERVER_URL, {
+    const res = await fetch("http://localhost:3000/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [{ role: "user", content: text }] }),
+      body: JSON.stringify({ message })
     });
     const data = await res.json();
-
-    chat.lastChild.remove();
-    addMessage(data.reply || "Error: no response", "bot");
+    typeMessage(data.reply);
   } catch (err) {
-    chat.lastChild.remove();
-    addMessage("Error: cannot connect to server", "bot");
+    typeMessage("⚠️ Error connecting to AI server.");
+    console.error(err);
   }
 }
 
 sendBtn.addEventListener("click", sendMessage);
-input.addEventListener("keydown", (e) => {
+userInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
 });
-
-addMessage("Hi! I’m Chat AI — ask anything (no 15+ questions allowed).", "bot");
