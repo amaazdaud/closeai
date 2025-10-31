@@ -2,9 +2,7 @@ async function sendMessageToBot(userMessage) {
   try {
     const response = await fetch("https://distortive-watertight-hank.ngrok-free.dev/api/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: userMessage })
     });
 
